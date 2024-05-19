@@ -1,83 +1,89 @@
-
-var buttonColours = ["red", "blue", "green", "yellow"];
-
+// Game variables
 var gamePattern = [];
-var userClickedPattern = [];
-
-var started = false;
+var userPattern = [];
+var buttonColours = ["red", "blue", "green", "yellow"];
 var level = 0;
+var startGame = false;
 
-$(document).keypress(function() {
-  if (!started) {
-    $("#level-title").text("Level " + level);
-    nextSequence();
-    started = true;
-  }
-});
-
-$(".btn").click(function() {
-
-  var userChosenColour = $(this).attr("id");
-  userClickedPattern.push(userChosenColour);
-
-  playSound(userChosenColour);
-  animatePress(userChosenColour);
-
-  //2. Call checkAnswer() after a user has clicked and chosen their answer, passing in the index of the last answer in the user's sequence.
-  checkAnswer(userClickedPattern.length-1);
-});
-
-
-//1. Create a new function called checkAnswer(), it should take one input with the name currentLevel
-function checkAnswer(currentLevel) {
-
-    //3. Write an if statement inside checkAnswer() to check if the most recent user answer is the same as the game pattern. If so then log "success", otherwise log "wrong".
-    if (gamePattern[currentLevel] === userClickedPattern[currentLevel]) {
-
-      console.log("success");
-
-      //4. If the user got the most recent answer right in step 3, then check that they have finished their sequence with another if statement.
-      if (userClickedPattern.length === gamePattern.length){
-
-        //5. Call nextSequence() after a 1000 millisecond delay.
-        setTimeout(function () {
-          nextSequence();
-        }, 1000);
-
-      }
-
-    } else {
-
-      console.log("wrong");
-
+// Start the game on keypress
+function startGameHandler() {
+    if (!startGame) {
+        nextSequence();
+        startGame = true;
     }
-
 }
+$(document).keypress(startGameHandler);
+$(document).on("touchstart", startGameHandler);
 
+
+// Handle button clicks
+$(".btn").on("click touchstart", function () {
+    var userChosenColour = $(this).attr("id");
+    userPattern.push(userChosenColour);
+   
+    playSound(userChosenColour);
+    animatePress(userChosenColour);
+    checkAnswer(userPattern.length - 1);
+});
+
+// Generate the next sequence
 function nextSequence() {
+    // Reset user pattern for the new level
+    userPattern = [];
+    level++;
+    $("#level-title").text("Level " + level);
 
-  //6. Once nextSequence() is triggered, reset the userClickedPattern to an empty array ready for the next level.
-  userClickedPattern = [];
+    // Choose a random color and add to the game pattern
+    var randomNumber = Math.floor(Math.random() * 4);
+    var randomChosenColour = buttonColours[randomNumber];
+    gamePattern.push(randomChosenColour);
 
-  level++;
-  $("#level-title").text("Level " + level);
-
-  var randomNumber = Math.floor(Math.random() * 4);
-  var randomChosenColour = buttonColours[randomNumber];
-  gamePattern.push(randomChosenColour);
-
-  $("#" + randomChosenColour).fadeIn(100).fadeOut(100).fadeIn(100);
-  playSound(randomChosenColour);
+    // Animate the chosen button and play its sound
+    $("#" + randomChosenColour).fadeOut(100).fadeIn(100);
+    playSound(randomChosenColour);
+    animatePress(randomChosenColour);
 }
 
+// Play sound for the given color
 function playSound(name) {
-  var audio = new Audio("sounds/" + name + ".mp3");
-  audio.play();
+    var audio = new Audio("sounds/" + name + ".mp3");
+    audio.play();
 }
 
-function animatePress(currentColor) {
-  $("#" + currentColor).addClass("pressed");
-  setTimeout(function () {
-    $("#" + currentColor).removeClass("pressed");
-  }, 100);
+// Animate the button press
+function animatePress(currentColour) {
+    $("#" + currentColour).addClass("pressed");
+    setTimeout(function () {
+        $("#" + currentColour).removeClass("pressed");
+    }, 100);
+}
+
+// Check the user's answer against the game pattern
+function checkAnswer(currentLevel) {
+    if (gamePattern[currentLevel] === userPattern[currentLevel]) {
+        // Check if the user has completed the sequence
+        if (userPattern.length === gamePattern.length) {
+            // Proceed to the next sequence after a delay
+            setTimeout(function () {
+                nextSequence();
+            }, 1000);
+        }
+    } else {
+        gameOver();
+    }
+}
+
+// Handle game over scenario
+function gameOver() {
+    playSound("wrong");
+    $("body").addClass("game-over");
+    setTimeout(function () {
+        $("body").removeClass("game-over");
+    }, 200);
+
+    // Reset the game variables
+    level = 0;
+    gamePattern = [];
+    $("#level-title").text("Game Over, Press Any Key to Restart");
+    startGame = false;
 }
